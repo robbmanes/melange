@@ -1,0 +1,56 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: podman-api-host
+  labels:
+    app: podman-api-host
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: podman-api-host
+  labels:
+    app: podman-api-host
+  namespace: podman-api-host
+---
+apiVersion: security.openshift.io/v1
+kind: SecurityContextConstraints
+metadata:
+  name: podman-api-host
+  labels:
+    app: podman-api-host
+  namespace: podman-api-host
+allowHostDirVolumePlugin: true
+users:
+  - system:serviceaccount:podman-api-host:podman-api-host
+runAsUser:
+  type: MustRunAsNonRoot
+seLinuxContext:
+  type: RunAsAny
+allowPrivilegeEscalation: true
+allowPrivilegedContainer: true
+allowedCapabilities:
+- '*'
+allowedUnsafeSysctls:
+- '*'
+fsGroup:
+  type: RunAsAny
+---
+apiVersion: machineconfiguration.openshift.io/v1
+kind: MachineConfig
+metadata:
+  name: 99-podman-api-socket
+  labels:
+    machineconfiguration.openshift.io/role: worker
+spec:
+  machineConfigPoolSelector:
+  matchLabels:
+    podman-api-host: true
+  config:
+    ignition:
+      version: 3.2.0
+    systemd:
+      units:
+      - name: podman.service
+        enabled: true

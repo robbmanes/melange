@@ -1,0 +1,33 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: podman-api-host-test
+  labels:
+    app: podman-api-host
+  namespace: podman-api-host
+spec:
+  template:
+    spec:
+      selector:
+        matchLabels:
+          podman-api-host: true
+      containers:
+      - name: podman
+        image: registry.access.redhat.com/ubi9/podman
+        command: ['sh', '-c', 'podman --log-level=debug --remote --url unix:/var/run/docker.sock ps -a']
+        securityContext:
+          runAsUser: 1000
+        volumeMounts:
+        - mountPath: /var/run/docker.sock
+          name: docker-socket
+      restartPolicy: Never
+      volumes:
+      - name: docker-socket
+        hostPath:
+          path: /run/podman/podman.sock
+          type: Socket
+      securityContext:
+        seLinuxOptions:
+          type: spc_t
+      serviceAccount: podman-api-host
+      serviceAccountName: podman-api-host
