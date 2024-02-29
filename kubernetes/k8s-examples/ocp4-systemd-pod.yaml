@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: ocp-systemd-pod
+---
+apiVersion: security.openshift.io/v1
+kind: SecurityContextConstraints
+metadata:
+  name: ocp-systemd-pod
+runAsUser:
+  type: RunAsAny
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: ocp-systemd-pod
+spec:
+  containers:
+  - name: ocp-systemd-pod
+    image: registry.access.redhat.com/ubi8/ubi-init
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop: ["ALL"]
+      runAsUser: 0
+      seccompProfile: 
+        type: RuntimeDefault
+    serviceAccount: ocp-systemd-pod
+    serviceAccountName: ocp-systemd-pod
