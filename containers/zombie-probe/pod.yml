@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: zombie-exec-pod
+spec:
+  containers:
+  - name: zombie-exec-pod
+    image: quay.io/robbmanes/zombie_probe:latest
+    command: ["sleep", "infinity"]
+    livenessProbe:
+      exec:
+        command: ["python3.11", "zombie_probe.py"]
+      initialDelaySeconds: 60
+      periodSeconds: 60
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop: ["ALL"]
+      runAsNonRoot: true
+      seccompProfile:
+        type: RuntimeDefault

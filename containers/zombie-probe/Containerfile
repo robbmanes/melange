@@ -1,0 +1,5 @@
+FROM registry.access.redhat.com/ubi9/python-311:1-52.1712567218
+USER default
+WORKDIR /opt/app-root/src
+COPY zombie_probe.py /opt/app-root/src
+CMD ["python3.11", "zombie_probe.py"]
