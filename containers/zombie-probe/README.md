@@ -36,4 +36,27 @@ $ ps aux | grep sleep
 The first process is the entrypoint of the container (`--coreutils-prog-shebang`) calling `sleep infinity` and the second defunct entry is our now-zombified `exec` of a python script that creates a defunct `sleep` process.  Any process that exits *after* the `Popen` within the python script can be used.
 
 ### Kubernetes/OpenShift
+Run the provided `pod.yml` configuration to create a zombie-pod:
+```
+$ oc create -f pod.yml
+pod/zombie-exec-pod created
 
+$ oc get pod zombie-exec-pod
+NAME              READY   STATUS    RESTARTS   AGE
+zombie-exec-pod   1/1     Running   0          52s
+```
+
+Observe as, using the `exec` method as a `livenessProbe` that does not properly call `wait` on its child processes, `sleep` defunct processes build up over time:
+```
+$ oc rsh zombie-exec-pod
+
+(app-root) sh-5.1$ ps aux
+USER         PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
+default        1  0.0  0.0   7868  1348 ?        Ss   14:21   0:00 /usr/bin/coreutils --coreutils-prog-shebang=sleep /usr/bin/sleep infini
+default       13  0.0  0.0      0     0 ?        Z    14:23   0:00 [sleep] <defunct>
+default       20  0.0  0.0      0     0 ?        Z    14:24   0:00 [sleep] <defunct>
+default       27  0.0  0.0      0     0 ?        Z    14:25   0:00 [sleep] <defunct>
+default       34  0.0  0.0   7868  1348 ?        S    14:26   0:00 /usr/bin/coreutils --coreutils-prog-shebang=sleep /usr/bin/sleep 60
+default       35  0.6  0.0   7388  4036 pts/0    Ss   14:26   0:00 /bin/sh
+default       42  0.0  0.0  10084  3576 pts/0    R+   14:26   0:00 ps aux
+```
