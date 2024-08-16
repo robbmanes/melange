@@ -2,7 +2,7 @@ import subprocess
 import sys
 
 def main():
-    # intentionally do call wait() on the subprocess
+    # intentionally do not call wait() on the subprocess
     proc = subprocess.Popen(('sleep', '60'), stdout=None)
     return
 
