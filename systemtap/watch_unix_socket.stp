@@ -1,0 +1,44 @@
+/*
+ * watch_unix_socket.stp
+ *
+ * This is a simply more modern version of the script found here:
+ * https://sourceware.org/systemtap/wiki/WSunixSockets
+ *
+ * The first argument is the location of the file descriptor for a UNIX socket.
+ * To find this address, for example, for the Docker socket run:
+ *
+ * # lsof 2>&1 | awk '/docker.sock/ {print $7}' | grep -v '0t0' | sort -u
+ * 0xffff8ed0b4eb1800
+ *
+ * And use that address to run this systemtap script:
+ * 
+ * # stap watch_unix_socket.stp 0xffff8ed0b4eb1800
+ */
+
+probe begin {
+	printf("Watching input into socket 0x%x...\n", $1);
+}
+
+probe kernel.function("unix_stream_sendmsg") {
+	if ($sock->sk != $1) {
+		printf("%d %s is accessing %p\n", pid(), execname(), $sock->sk);
+		printf("====================\n");
+
+		len = 0
+		for (i = 0; i < $msg->msg_iovlen; i++) {
+			len += $msg->msg_iov[i]->iov_len;
+		}
+	
+		printf("%d [", len);
+		for (i = 0; i < $msg->msg_iovlen; i++) {
+			printf("%s", user_string_n($msg->msg_iov[i]->iov_base, $msg->msg_iov[i]->iov_len));
+		}
+
+		printf("] [");
+		for (i = 0; i < $msg->msg_iovlen; i++) {
+			printf("%s", user_string_n($msg->msg_iov[i]->iov_base, $msg->msg_iov[i]->iov_len));
+		}
+
+		printf("]\n\n");
+	}
+}
